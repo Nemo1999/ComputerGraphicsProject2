@@ -17,7 +17,9 @@
 #include "stb_image.h"
 
 #define GL_LOG_FILE "gl.log"
-#define PI 3.14159265f
+#ifndef PI
+#define PI 3.14159265358979
+#endif
 #define CIRC_RES 30
 #define BALL_RES 30
 
@@ -354,7 +356,7 @@ int main () {
   int ball_view_mat_location = glGetUniformLocation(ball_shader_programme,"view_mat");
   int ball_project_mat_location = glGetUniformLocation(ball_shader_programme,"project_mat");
   int ball_tex_loc = glGetUniformLocation (ball_shader_programme, "ball_texture");
-  int ball_view_ori_mat_location = glGetUniformLocation(ball_shader_programme,"view_ori_mat");
+  //int ball_view_ori_mat_location = glGetUniformLocation(ball_shader_programme,"view_ori_mat");
   
 
   // open vertex shader
@@ -401,42 +403,46 @@ int main () {
     // wipe the drawing surface clear
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport (0, 0, g_fb_width, g_fb_height);
-    glm::mat4 glm_view_mat = glm::mat4(1.0f);
+    /*glm::mat4 glm_view_mat = glm::mat4(1.0f);
     glm_view_mat = glm::rotate(glm_view_mat,(-camera_ori[0]),glm::vec3(1.0f,0.0f,0.0f));
     glm_view_mat = glm::rotate(glm_view_mat,(-camera_ori[1]),glm::vec3(0.0f,1.0f,0.0f));
     glm_view_mat = glm::rotate(glm_view_mat,(-camera_ori[2]),glm::vec3(0.0f,0.0f,1.0f));
     glm_view_mat = glm::translate(glm_view_mat,glm::vec3(-camera_pos[0],-camera_pos[1],-camera_pos[2]));
 
     glm::mat4 glm_proj_mat = glm::frustumRH_NO(-0.1,0.1,-0.1,0.1,0.1,100.0);
+    */
+    float view_mat[16];
+    id4(view_mat);
+    translate4(view_mat,-camera_pos[0],-camera_pos[1],-camera_pos[2]);
+    rotate4(view_mat,-camera_ori[0],-camera_ori[1],-camera_ori[2]);
+    
+    float proj_mat[16];
+    id4(proj_mat); 
+    project4(proj_mat,field_of_view,aspect_ratio,near_plane_z,far_plane_z);
 
-    float* view_mat = (matmult4(
-			       rotate4(
-				       -camera_ori[0],
-				       -camera_ori[1],
-				       -camera_ori[2]),
-			       translate4(
-					  -camera_pos[0],
-					  -camera_pos[1],
-					  -camera_pos[2])
-			       )
-		      ).m;
-    float* proj_mat = project4(field_of_view,aspect_ratio,near_plane_z,far_plane_z).m;
-    //float* view_ori_mat = (rotate4(-camera_ori[0],-camera_ori[1],-camera_ori[2])).m;
-    mat4 proj_mat_struct ;
-    for(int i=0;i<16;i++)
-      proj_mat_struct.m[i]=glm::value_ptr(glm_proj_mat)[i]; 
-    fshowmat4(stderr, proj_mat_struct);
+    float camera_ori_mat[16];
+    id4(camera_ori_mat);
+    rotate4v(camera_ori_mat,camera_ori);
+
+    //fshowmat4(stderr, proj_mat);
     if(show_earth){
       glUseProgram (ball_shader_programme);
-      float * earth_model_mat=(matmult4(
-				       translate4v(earth_pos),
-				       matmult4(rotate4(-1.5,0.2,0.0),rotate4v(earth_ori)))).m;
+      float earth_model_mat[16];
+      id4(earth_model_mat);
+      rotate4v(earth_model_mat,earth_ori);
+      rotate4(earth_model_mat,1.5,0.2,0.0);
+      translate4v(earth_model_mat,earth_pos);
+
       glUniformMatrix4fv(ball_model_mat_location ,1, GL_TRUE,earth_model_mat);
-      glUniformMatrix4fv(ball_view_mat_location,1,GL_FALSE,glm::value_ptr(glm_view_mat));		     
-      glUniformMatrix4fv(ball_project_mat_location,1,GL_FALSE,glm::value_ptr(glm_proj_mat));
+      glUniformMatrix4fv(ball_view_mat_location,1,GL_TRUE,view_mat);		     
+      glUniformMatrix4fv(ball_project_mat_location,1,GL_TRUE,proj_mat);
+      
+
+      //glUniformMatrix4fv(ball_view_mat_location,1,GL_FALSE,glm::value_ptr(glm_view_mat));		     
+      //glUniformMatrix4fv(ball_project_mat_location,1,GL_FALSE,glm::value_ptr(glm_proj_mat));
       //glUniformMatrix4fv(ball_view_ori_mat_location,1,GL_TRUE,view_ori_mat);
       glUniform1i (ball_tex_loc, 1);
-      print_all(ball_shader_programme);
+      //print_all(ball_shader_programme);
       glBindVertexArray (vao_ball);
       // draw points 0-3 from the currently bound VAO with current in-use shader
       glDrawElements (GL_TRIANGLE_STRIP, (BALL_RES+1)*2*(BALL_RES-1),GL_UNSIGNED_INT,NULL);
@@ -444,9 +450,12 @@ int main () {
     }
     if(show_moon){
       glUseProgram (ball_shader_programme);
-      float * moon_model_mat=(matmult4(
-				       translate4v(moon_pos),
-				       matmult4(rotate4(-1.5,0.2,0.0),rotate4v(moon_ori)))).m;
+      float moon_model_mat[16];
+      id4(moon_model_mat);
+      rotate4v(moon_model_mat,moon_ori);
+      rotate4(moon_model_mat,-1.5,0.2,0.0);
+      translate4v(moon_model_mat,moon_pos);
+
       glUniformMatrix4fv(ball_model_mat_location ,1, GL_TRUE,moon_model_mat);
       glUniformMatrix4fv(ball_view_mat_location,1,GL_TRUE,view_mat);		     
       glUniformMatrix4fv(ball_project_mat_location,1,GL_TRUE,proj_mat);
@@ -459,9 +468,12 @@ int main () {
     }
     if(show_box){
       glUseProgram (box_shader_programme);
-      float * box_model_mat=(matmult4(
-				      translate4v(box_pos),
-				      matmult4(rotate4v(box_ori),scale4(0.5)))).m;
+      float box_model_mat[16];
+      id4(box_model_mat);
+      scale4(box_model_mat,0.5);
+      rotate4v(box_model_mat,box_ori);
+      translate4v(box_model_mat,box_pos);
+
       glUniformMatrix4fv(box_model_mat_location ,1, GL_TRUE,box_model_mat );
       glUniformMatrix4fv(box_view_mat_location,1,GL_TRUE,view_mat);		     
       glUniformMatrix4fv(box_project_mat_location,1,GL_TRUE,proj_mat);
@@ -503,32 +515,32 @@ int main () {
   
 
     if(GLFW_PRESS == glfwGetKey (window, GLFW_KEY_W)){
-      vec4 f = {.v={0.0,0.0,-1.0,0.0}};
-      vec4 foward = matapp4(rotate4v(camera_ori),f);
-      camera_pos[0] += period * foward.v[0] * 0.5 ;
-      camera_pos[1] += period * foward.v[1] * 0.5 ;
-      camera_pos[2] += period * foward.v[2] * 0.5 ;
+      float f[4] = {0.0,0.0,-1.0,0.0};
+      matapp4(camera_ori_mat,f);
+      camera_pos[0] += period * f[0] * 0.5 ;
+      camera_pos[1] += period * f[1] * 0.5 ;
+      camera_pos[2] += period * f[2] * 0.5 ;
     }
     if(GLFW_PRESS == glfwGetKey (window, GLFW_KEY_X)){
-      vec4 b = {.v={0.0,0.0,1.0,0.0}};
-      vec4 backward = matapp4(rotate4v(camera_ori),b);
-      camera_pos[0] += period * backward.v[0] * 0.5 ;
-      camera_pos[1] += period * backward.v[1] * 0.5 ;
-      camera_pos[2] += period * backward.v[2] * 0.5 ;
+      float b[4] ={0.0,0.0,1.0,0.0};
+      matapp4(camera_ori_mat,b);
+      camera_pos[0] += period * b[0] * 0.5 ;
+      camera_pos[1] += period * b[1] * 0.5 ;
+      camera_pos[2] += period * b[2] * 0.5 ;
     }
     if(GLFW_PRESS == glfwGetKey (window, GLFW_KEY_A)){
-      vec4 l = {.v={1.0,0.0,0.0,0.0}};
-      vec4 leftward = matapp4(rotate4v(camera_ori),l);
-      camera_pos[0] += period * leftward.v[0] * 0.5 ;
-      camera_pos[1] += period * leftward.v[1] * 0.5 ;
-      camera_pos[2] += period * leftward.v[2] * 0.5 ;
+      float l[4] ={1.0,0.0,0.0,0.0};
+      matapp4(camera_ori_mat,l);
+      camera_pos[0] += period * l[0] * 0.5 ;
+      camera_pos[1] += period * l[1] * 0.5 ;
+      camera_pos[2] += period * l[2] * 0.5 ;
     }
     if(GLFW_PRESS == glfwGetKey (window, GLFW_KEY_D)){
-      vec4 r = {.v={-1.0,0.0,0.0,0.0}};
-      vec4 rightward = matapp4(rotate4v(camera_ori),r);
-      camera_pos[0] += period * rightward.v[0] * 0.5 ;
-      camera_pos[1] += period * rightward.v[1] * 0.5 ;
-      camera_pos[2] += period * rightward.v[2] * 0.5 ;
+      float r[4] ={-1.0,0.0,0.0,0.0};
+      matapp4(camera_ori_mat,r);
+      camera_pos[0] += period * r[0] * 0.5 ;
+      camera_pos[1] += period * r[1] * 0.5 ;
+      camera_pos[2] += period * r[2] * 0.5 ;
     }
 
 

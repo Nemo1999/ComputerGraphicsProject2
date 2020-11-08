@@ -7,7 +7,7 @@ out vec2 text_eye;
 uniform mat4 model_mat;
 uniform mat4 view_mat;
 uniform mat4 project_mat;
-uniform mat4 view_ori_mat;
+//uniform mat4 view_ori_mat;
 void main () {
   position_eye = vec3(view_mat * model_mat * vec4(vertex_position,1.0));
   normal_eye = vec3(normalize(view_mat * model_mat * vec4(vertex_position,0.0)));
