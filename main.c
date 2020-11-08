@@ -1,8 +1,7 @@
 #include <GL/glew.h> // include GLEW and new version of GL on Windows
 #include <GLFW/glfw3.h> // GLFW helper library
-//#include <GLUT/glut.h>
+#include<vector>
 #include<math.h>
-//#include"glm.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -13,8 +12,10 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include "LinAlg.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "loadOBJ.hpp"
 
 #define GL_LOG_FILE "gl.log"
 #ifndef PI
@@ -51,10 +52,11 @@ float aspect_ratio = 640.0/480.0;
 float camera_ori[3] = {0.0f,0.0f,0.0f};  
 float prev_camera_ori[3] = {0.0f,0.0f,0.0f};
 
-bool show_box=true;
-bool show_earth=true;
+bool show_box=false;
+bool show_earth=false;
 bool show_moon=true;
-int last_shown=1;
+bool show_bunny=true;
+int last_shown=4;
 
 double previous_seconds;
 int frame_count;
@@ -66,7 +68,7 @@ bool mouse_is_down = 0;
 
 
 
-void glfw_window_size_callback (GLFWwindow* window, int width, int height) {
+void glfw_window_size_callback (GLFWwindow* window, int width, int height){
   g_win_width = width;
   g_win_height = height;
   aspect_ratio = (float) g_fb_width / (float)g_fb_height;
@@ -119,13 +121,17 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     show_moon = !show_moon;
     if(show_moon)last_shown = 3;
   }
+  if (key == GLFW_KEY_4 && action == GLFW_PRESS){
+    show_bunny = !show_bunny;
+    if(show_bunny)last_shown = 4;
+  }
   
         
 }
 
 int main () {
   
-  
+  //==============================initialize glfw and glew========================
   if (!restart_gl_log ()) { /* quit? */ }
   // start GL context and O/S window using the GLFW helper library
   gl_log ("starting GLFW\n%s\n", glfwGetVersionString ());
@@ -175,12 +181,25 @@ int main () {
   glEnable (GL_DEPTH_TEST); // enable depth-testing
   glDepthFunc (GL_LESS); // depth-testing interprets a smaller value as "closer"
 
-  loadtexture("Resources/Old/container.jpg",0);
-  loadtexture("Resources/Old/earth.jpg",1);
-  loadtexture("Resources/Old/moon.jpg",2);
+//======================load textures=======================================
+
+loadtexture("Resources/Old/container.jpg",0);
+loadtexture("Resources/Old/earth.jpg",1);
+loadtexture("Resources/Old/moon.jpg",2);
+loadtexture("Resources/Tile.ppm",3);
+
+//=====================load vertex, normal, and texture from obj file==============
+
+
+std::vector < glm::vec3 >  bunny_vertices;
+std::vector < glm::vec2 >  bunny_uvs;
+std::vector < glm::vec3 >  bunny_normals;
+readOBJ("Resources/bunny.obj", bunny_vertices , bunny_uvs, bunny_normals);
 
   
 //===================== generating vertex, normal and texture data======================
+
+
 
   GLfloat ball_vert[(BALL_RES+1)*(BALL_RES+1)*3];
   for(int i=0;i<BALL_RES+1;i++){
@@ -271,7 +290,48 @@ int main () {
       }
     }
   }
+
+//=========================load data into VBO , VAO ======================================
+
+//--------------bunny
+GLuint vbo_bunny_vert = 0;
+    glGenBuffers (1,&vbo_bunny_vert);
+    glBindBuffer(GL_ARRAY_BUFFER,vbo_bunny_vert);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*bunny_vertices.size(),&(bunny_vertices[0]),GL_STATIC_DRAW);
+
+  GLuint vbo_bunny_normal = 0;
+    glGenBuffers (1,&vbo_bunny_normal);
+    glBindBuffer(GL_ARRAY_BUFFER,vbo_bunny_normal);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*bunny_normals.size(),&(bunny_normals[0]),GL_STATIC_DRAW);
+
+  GLuint vbo_bunny_text = 0;
+    glGenBuffers (1,&vbo_bunny_text);
+    glBindBuffer(GL_ARRAY_BUFFER,vbo_bunny_text);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)*bunny_uvs.size(),&(bunny_uvs[0]),GL_STATIC_DRAW);
   
+  GLuint vao_bunny = 0;
+    glGenVertexArrays (1, &vao_bunny);
+    glBindVertexArray (vao_bunny);
+
+    glEnableVertexAttribArray (0);//set layout (location = 0) in vertex shader 
+    glBindBuffer (GL_ARRAY_BUFFER, vbo_bunny_vert);
+    glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+  
+    glEnableVertexAttribArray (1);//set layout (location = 1) in vertex shader 
+    glBindBuffer (GL_ARRAY_BUFFER, vbo_bunny_normal);
+    glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+    glEnableVertexAttribArray (2);//set layout (location = 2) in vertex shader 
+    glBindBuffer (GL_ARRAY_BUFFER, vbo_bunny_text);
+    glVertexAttribPointer (2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+  
+    //unbind the VAO
+    glBindVertexArray(0);
+    //unbind buffers to check that VAO work fine
+    glBindBuffer(GL_ARRAY_BUFFER,0); 
+
+// ------------------box
+
   GLuint vbo_box_vert = 0;
     glGenBuffers (1,&vbo_box_vert);
     glBindBuffer(GL_ARRAY_BUFFER,vbo_box_vert);
@@ -310,6 +370,7 @@ int main () {
     //unbind buffers to check that VAO work fine
     glBindBuffer(GL_ARRAY_BUFFER,0); 
   
+//---------------ball
   GLuint vbo_ball_vert = 0;
     glGenBuffers (1,&vbo_ball_vert);
     glBindBuffer(GL_ARRAY_BUFFER,vbo_ball_vert);
@@ -344,6 +405,10 @@ int main () {
     glBindBuffer(GL_ARRAY_BUFFER,0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 
+
+//================================load shaders , get uniform locations ========================================
+
+//---------------ball
   // open vertex shader
   GLuint ball_vs = loadShader("ball.vert",GL_VERTEX_SHADER);
   // open fragment shader
@@ -358,7 +423,7 @@ int main () {
   int ball_tex_loc = glGetUniformLocation (ball_shader_programme, "ball_texture");
   //int ball_view_ori_mat_location = glGetUniformLocation(ball_shader_programme,"view_ori_mat");
   
-
+//----------------box
   // open vertex shader
   GLuint box_vs = loadShader("box.vert",GL_VERTEX_SHADER);
   // open fragment shader
@@ -372,23 +437,36 @@ int main () {
   int box_project_mat_location = glGetUniformLocation(box_shader_programme,"project_mat");
   int box_tex_loc = glGetUniformLocation (box_shader_programme, "box_texture");
   
+//================================define variables for main loop==================
   float field_of_view = 67.0f;
   float near_plane_z = 0.1;
   float far_plane_z = 100;
 
-  float earth_pos[3] = {0.0f,0.0f,0.0f};
+  
   float moon_pos[3] = {-2.0f,0.0f,0.0f};
-  float earth_ori[3] = {0.0f,0.0f,0.0f};
   float moon_ori[3] = {0.0f,0.0f,0.0f};
-  float camera_pos[3] = {0.0f , 0.0f , 2.0f };
-  // camera_ori is moved to global;
+
+  float earth_pos[3] = {0.0f,0.0f,0.0f};
+  float earth_ori[3] = {0.0f,0.0f,0.0f};
+  
   float box_pos[3] = {2.0f,0.0f,0.0f};
   float box_ori[3] = {0.0f,0.0f,0.0f};
+
+  float bunny_pos[3] = {0.0f,0.0f,0.0f};
+  float bunny_ori[3] = {0.0f,0.0f,0.0f};
+
+  float camera_pos[3] = {0.0f , 0.0f , 2.0f };
+  // camera_ori is moved to global;
+
+  
+  
   double time0 = glfwGetTime();
   double time1 , period;
-  float * poses[4] = {0,box_pos,earth_pos,moon_pos};
+  float * poses[5] = {0,box_pos,earth_pos,moon_pos,bunny_pos};
   
   glClearColor(0.6f,0.6f,0.8f,1.0f);
+
+  //=================================Main loop=================================
   while (!glfwWindowShouldClose (window)) {
     _update_fps_counter(window);
     time1 = glfwGetTime();
@@ -482,6 +560,23 @@ int main () {
       glBindVertexArray (vao_box);
       glDrawArrays(GL_TRIANGLES,0,36);
     }
+    if(show_bunny){
+      glUseProgram (box_shader_programme);
+      float bunny_model_mat[16];
+      id4(bunny_model_mat);
+      scale4(bunny_model_mat,0.5);
+      rotate4v(bunny_model_mat,bunny_ori);
+      translate4v(bunny_model_mat,bunny_pos);
+
+      glUniformMatrix4fv(box_model_mat_location ,1, GL_TRUE,bunny_model_mat );
+      glUniformMatrix4fv(box_view_mat_location,1,GL_TRUE,view_mat);		     
+      glUniformMatrix4fv(box_project_mat_location,1,GL_TRUE,proj_mat);
+      glUniform1i (box_tex_loc, 3);
+      //print_all(shader_programme);
+      glBindVertexArray (vao_bunny);
+      glDrawArrays(GL_TRIANGLES,0,bunny_vertices.size());
+    }
+
     
     // update other events like input handling
     glfwPollEvents ();
