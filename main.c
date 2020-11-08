@@ -1,7 +1,7 @@
 #include <GL/glew.h> // include GLEW and new version of GL on Windows
 #include <GLFW/glfw3.h> // GLFW helper library
-#include<vector>
-#include<math.h>
+#include <vector>
+#include <math.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -23,7 +23,8 @@
 #endif
 #define CIRC_RES 30
 #define BALL_RES 30
-
+#define CAMERA_ORI 10;
+#define OBJECT_ORI 11;
 
 bool gl_log (const char* message, ...);
 bool restart_gl_log ();
@@ -52,6 +53,15 @@ float aspect_ratio = 640.0/480.0;
 float camera_ori[3] = {0.0f,0.0f,0.0f};  
 float prev_camera_ori[3] = {0.0f,0.0f,0.0f};
 
+float moon_ori[3] = {0.0f,0.0f,0.0f};
+float earth_ori[3] = {0.0f,0.0f,0.0f};
+float box_ori[3] = {0.0f,0.0f,0.0f};
+float earth_pos[3] = {0.0f,0.0f,0.0f};
+float bunny_ori[3] = {0.0f,0.0f,0.0f};
+float* oris[5] = {0,box_ori,earth_ori,moon_ori,bunny_ori};
+float prev_obj_ori[3] = {0.0f,0.0f,0.0f};
+
+int ori_control_mode = 1 ;
 bool show_box=false;
 bool show_earth=false;
 bool show_moon=true;
@@ -95,15 +105,28 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 }
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
-{
-  if (mouse_is_down)
-    {
-      camera_ori[1] = prev_camera_ori[1] + PI*(xpos - mouse_x_before_press)/g_fb_width;
-      camera_ori[0] = prev_camera_ori[0] + PI*(ypos - mouse_y_before_press)/g_fb_height;
+{ 
+  if( ori_control_mode){
+    if (mouse_is_down)
+      {
+        camera_ori[1] = prev_camera_ori[1] + PI*(xpos - mouse_x_before_press)/g_fb_width;
+        camera_ori[0] = prev_camera_ori[0] + PI*(ypos - mouse_y_before_press)/g_fb_height;
+      }
+    else{
+      prev_camera_ori[1] = camera_ori[1];
+      prev_camera_ori[0] = camera_ori[0];
     }
-  else{
-    prev_camera_ori[1] = camera_ori[1];
-    prev_camera_ori[0] = camera_ori[0];
+  }
+  else{// ori_control_mode  = OBJ_ORI
+    if (mouse_is_down)
+      {
+        oris[last_shown][1] = prev_obj_ori[1] + PI*(xpos - mouse_x_before_press)/g_fb_width;
+        oris[last_shown][0] = prev_obj_ori[0] + PI*(ypos - mouse_y_before_press)/g_fb_height;
+      }
+    else{
+      prev_obj_ori[1] = oris[last_shown][1];
+      prev_obj_ori[0] = oris[last_shown][0];
+    }
   }
 }
 
@@ -125,8 +148,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     show_bunny = !show_bunny;
     if(show_bunny)last_shown = 4;
   }
-  
-        
+  if (key == GLFW_KEY_TAB && action == GLFW_PRESS ){
+    if( ori_control_mode ){ 
+      ori_control_mode = 0 ;
+    }
+    else{
+      ori_control_mode = 1 ;
+    }
+  }
+    
 }
 
 int main () {
@@ -186,7 +216,7 @@ int main () {
 loadtexture("Resources/Old/container.jpg",0);
 loadtexture("Resources/Old/earth.jpg",1);
 loadtexture("Resources/Old/moon.jpg",2);
-loadtexture("Resources/Tile.ppm",3);
+loadtexture("Resources/Stone.ppm",3);
 
 //=====================load vertex, normal, and texture from obj file==============
 
@@ -444,16 +474,13 @@ GLuint vbo_bunny_vert = 0;
 
   
   float moon_pos[3] = {-2.0f,0.0f,0.0f};
-  float moon_ori[3] = {0.0f,0.0f,0.0f};
-
-  float earth_pos[3] = {0.0f,0.0f,0.0f};
-  float earth_ori[3] = {0.0f,0.0f,0.0f};
+  
   
   float box_pos[3] = {2.0f,0.0f,0.0f};
-  float box_ori[3] = {0.0f,0.0f,0.0f};
+  
 
   float bunny_pos[3] = {0.0f,0.0f,0.0f};
-  float bunny_ori[3] = {0.0f,0.0f,0.0f};
+  
 
   float camera_pos[3] = {0.0f , 0.0f , 2.0f };
   // camera_ori is moved to global;
@@ -477,6 +504,9 @@ GLuint vbo_bunny_vert = 0;
     moon_ori[2] =  time1 * 0.6;
     box_ori[1] = time1 * 0.2;
     box_ori[0] = time1 * 0.3;
+
+    //bunny_ori[1] = time1 * 0.2;
+    //bunny_ori[2] = time1 *0.4;
 
     // wipe the drawing surface clear
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

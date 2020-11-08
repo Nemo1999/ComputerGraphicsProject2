@@ -1,4 +1,4 @@
-GL_LOG_FILE log. local time Sun Nov  8 18:06:39 2020
+GL_LOG_FILE log. local time Sun Nov  8 20:55:17 2020
 
 starting GLFW
 3.3.2 X11 GLX EGL OSMesa clock_gettime evdev shared
@@ -16,3 +16,5 @@ GL_MAX_VERTEX_UNIFORM_COMPONENTS 16384
 GL_MAX_VIEWPORT_DIMS 16384 16384
 GL_STEREO 0
 -----------------------------
+framebuffer_size changed to 1920x1016
+window_size changed to 1920x1016
