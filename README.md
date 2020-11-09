@@ -28,7 +28,7 @@ glxinfo | grep OpenGL
 ```bash
 make all
 ```
-![alt text](Resources/bunny_moon.jpg?raw=true "玉兔美照")
+![alt text](Resources/bunny_moon.png?raw=true "玉兔美照")
 
 
 
