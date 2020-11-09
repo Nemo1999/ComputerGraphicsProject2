@@ -1,4 +1,4 @@
-# ComputerGraphicsProject_1
+# ComputerGraphicsProject2
 This is a  project for a Computer Graphics course in NCTU
 
 
@@ -9,10 +9,10 @@ This is a  project for a Computer Graphics course in NCTU
 - Install libraries:
 
 ```bash
-sudo apt-get install build-essential libgl1-mesa-dev 
+sudo apt-get install build-essential libgl1-mesa-dev g++
 # install build tool and drivers
 
-sudo apt-get install libglew-dev libglfw3-dev
+sudo apt-get install libglew-dev libglfw3-dev libglm-dev
 # install GLFW and GLEW
 
 ```
@@ -28,7 +28,7 @@ glxinfo | grep OpenGL
 ```bash
 make all
 ```
-
+![alt text](Resources/bunny_moon.jpg?raw=true "玉兔美照")
 
 
 
