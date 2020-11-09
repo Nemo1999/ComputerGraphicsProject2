@@ -61,6 +61,8 @@ float bunny_ori[3] = {0.0f,0.0f,0.0f};
 float* oris[5] = {0,box_ori,earth_ori,moon_ori,bunny_ori};
 float prev_obj_ori[3] = {0.0f,0.0f,0.0f};
 
+float texture_noise_ramp_control[3] = {0.0f,0.0f,0.0f};
+
 int ori_control_mode = 1 ;
 bool show_box=false;
 bool show_earth=false;
@@ -156,7 +158,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
       ori_control_mode = 1 ;
     }
   }
-    
+  if (key == GLFW_KEY_7 && action == GLFW_PRESS){
+    texture_noise_ramp_control[0] = 1.0 -texture_noise_ramp_control[0];
+  }
+  if (key == GLFW_KEY_8 && action == GLFW_PRESS){
+    texture_noise_ramp_control[1] = 1.0 -texture_noise_ramp_control[1];
+  }
+  if (key == GLFW_KEY_9 && action == GLFW_PRESS){
+    texture_noise_ramp_control[2] = 1.0 -texture_noise_ramp_control[2];
+  }
 }
 
 int main () {
@@ -217,7 +227,8 @@ loadtexture("Resources/Old/container.jpg",0);
 loadtexture("Resources/Old/earth.jpg",1);
 loadtexture("Resources/Old/moon.jpg",2);
 loadtexture("Resources/Stone.ppm",3);
-
+loadtexture("Resources/noisetexture.ppm.bmp",4);
+loadtexture("Resourdes/ramp.ppm",5);
 //=====================load vertex, normal, and texture from obj file==============
 
 
@@ -436,6 +447,8 @@ GLuint vbo_bunny_vert = 0;
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 
 
+
+
 //================================load shaders , get uniform locations ========================================
 
 //---------------ball
@@ -453,11 +466,11 @@ GLuint vbo_bunny_vert = 0;
   int ball_tex_loc = glGetUniformLocation (ball_shader_programme, "ball_texture");
   //int ball_view_ori_mat_location = glGetUniformLocation(ball_shader_programme,"view_ori_mat");
   
-//----------------box
+//----------------shader for box and bunny
   // open vertex shader
-  GLuint box_vs = loadShader("box.vert",GL_VERTEX_SHADER);
+  GLuint box_vs = loadShader("bunny.vert",GL_VERTEX_SHADER);
   // open fragment shader
-  GLuint box_fs = loadShader("box.frag",GL_FRAGMENT_SHADER);
+  GLuint box_fs = loadShader("bunny.frag",GL_FRAGMENT_SHADER);
   // link shaders
   GLuint box_shaders[2] = {box_vs,box_fs};
   GLuint box_shader_programme = linkShaders(box_shaders,2);
@@ -465,8 +478,12 @@ GLuint vbo_bunny_vert = 0;
   int box_model_mat_location = glGetUniformLocation(box_shader_programme,"model_mat");
   int box_view_mat_location = glGetUniformLocation(box_shader_programme,"view_mat");
   int box_project_mat_location = glGetUniformLocation(box_shader_programme,"project_mat");
+  int texture_noise_ramp_control_location = glGetUniformLocation(box_shader_programme,"texture_noise_ramp");
   int box_tex_loc = glGetUniformLocation (box_shader_programme, "box_texture");
-  
+  int box_nois_tex_loc = glGetUniformLocation (box_shader_programme, "noise_texture");
+  int box_ramp_tex_loc = glGetUniformLocation (box_shader_programme, "ramp_texture");
+  int time_loc = glGetUniformLocation( box_shader_programme, "time");
+
 //================================define variables for main loop==================
   float field_of_view = 67.0f;
   float near_plane_z = 0.1;
@@ -504,7 +521,7 @@ GLuint vbo_bunny_vert = 0;
     moon_ori[2] =  time1 * 0.6;
     box_ori[1] = time1 * 0.2;
     box_ori[0] = time1 * 0.3;
-
+    
     //bunny_ori[1] = time1 * 0.2;
     //bunny_ori[2] = time1 *0.4;
 
@@ -585,7 +602,12 @@ GLuint vbo_bunny_vert = 0;
       glUniformMatrix4fv(box_model_mat_location ,1, GL_TRUE,box_model_mat );
       glUniformMatrix4fv(box_view_mat_location,1,GL_TRUE,view_mat);		     
       glUniformMatrix4fv(box_project_mat_location,1,GL_TRUE,proj_mat);
+      float boxDefaut[3] = {1.0f,0.0f,0.0f};
+      glUniform3fv(texture_noise_ramp_control_location,1,boxDefaut);
+      glUniform1f(time_loc , time1);
       glUniform1i (box_tex_loc, 0);
+      glUniform1i (box_nois_tex_loc , 4);
+      glUniform1i (box_ramp_tex_loc , 5);
       //print_all(shader_programme);
       glBindVertexArray (vao_box);
       glDrawArrays(GL_TRIANGLES,0,36);
@@ -602,6 +624,11 @@ GLuint vbo_bunny_vert = 0;
       glUniformMatrix4fv(box_view_mat_location,1,GL_TRUE,view_mat);		     
       glUniformMatrix4fv(box_project_mat_location,1,GL_TRUE,proj_mat);
       glUniform1i (box_tex_loc, 3);
+      glUniform3fv(texture_noise_ramp_control_location,1,texture_noise_ramp_control);
+      glUniform1f(time_loc , time1);
+      glUniform1i (box_nois_tex_loc , 4);
+      glUniform1i (box_ramp_tex_loc , 5);
+      
       //print_all(shader_programme);
       glBindVertexArray (vao_bunny);
       glDrawArrays(GL_TRIANGLES,0,bunny_vertices.size());

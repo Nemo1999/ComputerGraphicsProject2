@@ -3,22 +3,30 @@ in vec3 box_pos_eye;
 in vec3 box_normal_eye;
 in vec2 box_text_eye;
 uniform mat4 view_mat;
+uniform vec3 texture_noise_ramp;
 uniform sampler2D box_texture;
+uniform sampler2D noise_texture;
+uniform sampler2D ramp_texture;
+uniform double time;
 // fixed point light properties
 vec3 light_position_world = vec3 (2.0, 2.0, 4.0);
-vec3 Ls = vec3 (1.0, 1.0, 1.0); // white specular colour
-vec3 Ld = vec3 (0.7, 0.7, 0.7); // dull white diffuse light colour
+vec3 Ls = vec3 (0.5, 0.5, 0.5); // white specular colour
+vec3 Ld = vec3 (0.8, 0.8, 0.8); // dull white diffuse light colour
 vec3 La = vec3 (0.2, 0.2, 0.2); // grey ambient colour
 // surface reflectance
 vec3 Ks = vec3 (1.0, 1.0,1.0); // fully reflect specular light	    
-vec3 Kd = vec3 (0.5, 0.5,0.0); // orange diffuse surface reflectance 
+vec3 Kd = vec3 (1.0, 1.0,1.0); // orange diffuse surface reflectance 
 vec3 Ka = vec3 (1.0, 1.0,1.0); // fully reflect ambient light	    
 float specular_exponent =100.0; // specular 'power'		    
 
 out vec4 fragment_colour; // final colour of surface
 
 void main () {
-  vec4 texel = texture (box_texture, box_text_eye);
+  vec4 texel;
+  if(texture_noise_ramp.x > 0.5)
+    texel = texture (box_texture, box_text_eye);
+  else 
+    texel = vec4(1.0,1.0,1.0,0.0);
   // ambient intensity
   vec3 Ia = La * vec3(texel);
   // diffuse intensity

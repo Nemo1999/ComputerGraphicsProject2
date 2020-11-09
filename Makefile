@@ -8,7 +8,7 @@ LDLIBS=-lGLEW -lglfw -lGL -lm
 all: main
 	./main
 
-main : ball.vert ball.frag box.vert box.frag main.c LinAlg.h
+main : ball.vert ball.frag bunny.vert bunny.frag main.c LinAlg.h
 	#gcc -std=c11   main.c  ${LDLIBS}  -o main 
 	g++ -std=c++11   main.c  ${LDLIBS}  -o main 
 
