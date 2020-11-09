@@ -57,7 +57,7 @@ float moon_ori[3] = {0.0f,0.0f,0.0f};
 float earth_ori[3] = {0.0f,0.0f,0.0f};
 float box_ori[3] = {0.0f,0.0f,0.0f};
 float earth_pos[3] = {0.0f,0.0f,0.0f};
-float bunny_ori[3] = {0.0f,0.0f,0.0f};
+float bunny_ori[3] = {0.0f,0.0f,3.1415f};
 float* oris[5] = {0,box_ori,earth_ori,moon_ori,bunny_ori};
 float prev_obj_ori[3] = {0.0f,0.0f,0.0f};
 
@@ -122,8 +122,8 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
   else{// ori_control_mode  = OBJ_ORI
     if (mouse_is_down)
       {
-        oris[last_shown][1] = prev_obj_ori[1] + PI*(xpos - mouse_x_before_press)/g_fb_width;
-        oris[last_shown][0] = prev_obj_ori[0] + PI*(ypos - mouse_y_before_press)/g_fb_height;
+        oris[last_shown][1] = prev_obj_ori[1] + (-2)*PI*(xpos - mouse_x_before_press)/g_fb_width;
+        oris[last_shown][0] = prev_obj_ori[0] + 2*PI*(ypos - mouse_y_before_press)/g_fb_height;
       }
     else{
       prev_obj_ori[1] = oris[last_shown][1];
@@ -228,7 +228,7 @@ loadtexture("Resources/Old/earth.jpg",1);
 loadtexture("Resources/Old/moon.jpg",2);
 loadtexture("Resources/Stone.ppm",3);
 loadtexture("Resources/noisetexture.ppm.bmp",4);
-loadtexture("Resourdes/ramp.ppm",5);
+loadtexture("Resources/ramp.ppm.bmp",5);
 //=====================load vertex, normal, and texture from obj file==============
 
 
@@ -602,9 +602,9 @@ GLuint vbo_bunny_vert = 0;
       glUniformMatrix4fv(box_model_mat_location ,1, GL_TRUE,box_model_mat );
       glUniformMatrix4fv(box_view_mat_location,1,GL_TRUE,view_mat);		     
       glUniformMatrix4fv(box_project_mat_location,1,GL_TRUE,proj_mat);
-      float boxDefaut[3] = {1.0f,0.0f,0.0f};
-      glUniform3fv(texture_noise_ramp_control_location,1,boxDefaut);
-      glUniform1f(time_loc , time1);
+      //float boxDefaut[3] = {1.0f,0.0f,0.0f};
+      glUniform3fv(texture_noise_ramp_control_location,1,texture_noise_ramp_control);
+      glUniform1f(time_loc , (float)time1);
       glUniform1i (box_tex_loc, 0);
       glUniform1i (box_nois_tex_loc , 4);
       glUniform1i (box_ramp_tex_loc , 5);

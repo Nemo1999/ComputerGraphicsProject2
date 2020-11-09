@@ -7,7 +7,7 @@ uniform vec3 texture_noise_ramp;
 uniform sampler2D box_texture;
 uniform sampler2D noise_texture;
 uniform sampler2D ramp_texture;
-uniform double time;
+uniform float time;
 // fixed point light properties
 vec3 light_position_world = vec3 (2.0, 2.0, 4.0);
 vec3 Ls = vec3 (0.5, 0.5, 0.5); // white specular colour
@@ -22,6 +22,17 @@ float specular_exponent =100.0; // specular 'power'
 out vec4 fragment_colour; // final colour of surface
 
 void main () {
+  if(texture_noise_ramp.y> 0.5){
+    float thresh = min(max(1.5*sin(0.7 * time - 0.5),0),1);
+    float mask_pixel = texture(noise_texture, box_text_eye).x;
+    if(thresh < mask_pixel){
+      discard;
+    }
+    if(abs(thresh - mask_pixel) < 0.05){
+      fragment_colour = vec4(1.0, 0.0, 1.0, 1.0);
+      return ;
+    }
+  }
   vec4 texel;
   if(texture_noise_ramp.x > 0.5)
     texel = texture (box_texture, box_text_eye);
@@ -48,5 +59,15 @@ void main () {
   vec3 Is = Ls * vec3(texel) * specular_factor; // final specular intensity
 
   // final colour
+  if(texture_noise_ramp[2]> 0.5){
+      vec3 ans = Ia+Id+Is;
+      ans.x = texture(ramp_texture, vec2(ans.x,ans.x)).x;
+      ans.y = texture(ramp_texture, vec2(ans.y,ans.y)).y;
+      ans.z = texture(ramp_texture, vec2(ans.z,ans.z)).z;
+      fragment_colour = vec4(ans, 0);
+  }
+  
+  else  
   fragment_colour = vec4 (Ia+Id+Is, 1.0);
+  
 }
